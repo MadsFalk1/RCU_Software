@@ -7,7 +7,6 @@ from PyQt6.QtWidgets import (
     QFormLayout,
     QGridLayout,
     QGroupBox,
-    QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
@@ -32,6 +31,8 @@ class OperationPage(QWidget):
         self.rpm_field = QLineEdit("0.0")
         self.turns_field = QLineEdit("0.0")
         self.temp_field = QLineEdit("0.0")
+        self.err_field = QLineEdit("")
+        self.err_field.setReadOnly(True)
 
         self.ind_water = LedIndicator("Water Alarm")
         self.ind_com = LedIndicator("Com OK")
@@ -76,14 +77,14 @@ class OperationPage(QWidget):
         torque_layout.addWidget(QPushButton("Reset Turn"))
 
         right_controls = QGroupBox("Panel Controls")
-        rc_layout = QVBoxLayout(right_controls)
-        rc_layout.addWidget(QPushButton("Remote Panel On/Off"))
-        rc_layout.addWidget(QPushButton("Start Com"))
-        rc_layout.addWidget(self.ind_water)
-        rc_layout.addWidget(self.ind_com)
-        rc_layout.addWidget(self.ind_crc)
-        rc_layout.addWidget(QLabel("Temp"))
-        rc_layout.addWidget(self.temp_field)
+        rc_form = QFormLayout(right_controls)
+        rc_form.addRow("", QPushButton("Remote Panel On/Off"))
+        rc_form.addRow("", QPushButton("Start Com"))
+        rc_form.addRow("", self.ind_water)
+        rc_form.addRow("", self.ind_com)
+        rc_form.addRow("", self.ind_crc)
+        rc_form.addRow("Temp", self.temp_field)
+        rc_form.addRow("Comm Error", self.err_field)
 
         controls.addWidget(turn_limit, 1, 0, 1, 2)
         controls.addWidget(torque_control, 1, 2)
@@ -102,13 +103,17 @@ class OperationPage(QWidget):
         return box
 
     def update_data(self, data: DataModel) -> None:
-        self.gauge_supply1.set_value(data.supply_pressure1)
-        self.gauge_supply2.set_value(data.supply_pressure2)
-        self.gauge_return.set_value(data.return_pressure)
-        self.gauge_torque.set_value(data.torque)
-        self.rpm_field.setText(f"{data.rpm:.1f}")
-        self.turns_field.setText(f"{data.turns:.2f}")
-        self.temp_field.setText(f"{data.temperature:.1f}")
-        self.ind_com.set_on(True)
-        self.ind_crc.set_on(True)
-        self.ind_water.set_on(data.temperature > 90)
+        dv = data.derived_values
+        self.gauge_supply1.set_value(float(dv.get("supply_pressure1", 0.0)))
+        self.gauge_supply2.set_value(float(dv.get("supply_pressure2", 0.0)))
+        self.gauge_return.set_value(float(dv.get("return_pressure", 0.0)))
+        self.gauge_torque.set_value(float(dv.get("torque", 0.0)))
+        self.rpm_field.setText(f"{float(dv.get('rpm', 0.0)):.1f}")
+        self.turns_field.setText(f"{float(dv.get('turns', 0.0)):.2f}")
+        temperature = float(dv.get("temperature", 0.0))
+        self.temp_field.setText(f"{temperature:.1f}")
+
+        self.ind_com.set_on(data.com_ok)
+        self.ind_crc.set_on(data.crc_ok)
+        self.ind_water.set_on(temperature > 90)
+        self.err_field.setText(data.last_error)

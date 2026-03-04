@@ -35,7 +35,7 @@ class GraphPage(QWidget):
     def add_point(self, data: DataModel) -> None:
         self.time_s += 0.1
         self.x_data.append(self.time_s)
-        self.y_data.append(data.torque)
+        self.y_data.append(float(data.derived_values.get("torque", 0.0)))
         if len(self.x_data) > 500:
             self.x_data = self.x_data[-500:]
             self.y_data = self.y_data[-500:]
