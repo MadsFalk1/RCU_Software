@@ -1,0 +1,4 @@
+PyQt6>=6.6
+pyqtgraph>=0.13
+pymodbus>=3.6
+pyserial>=3.5
