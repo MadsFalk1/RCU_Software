@@ -1,0 +1,6 @@
+{
+  "theme": "light",
+  "refresh_interval": 30,
+  "auto_start": false,
+  "output_directory": "./output"
+}
