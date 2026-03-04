@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import QApplication
 
 from services.comm_service import CommService
 from services.data_model import DataModel
+from services.settings_store import SettingsStore
 from ui.main_window import MainWindow
 
 
@@ -22,7 +23,8 @@ def main() -> int:
 
     model = DataModel()
     comm_service = CommService(model, port="COM3", slave_id=1, baudrate=38400, parity="N", stopbits=1)
-    window = MainWindow(model, comm_service)
+    settings_store = SettingsStore()
+    window = MainWindow(model, comm_service, settings_store)
     window.show()
 
     comm_service.connect()
