@@ -103,13 +103,30 @@ class SetupPage(QWidget):
         layout.addLayout(row2)
         layout.addWidget(diagnostics)
 
-    def comm_params(self) -> dict[str, Any]:
+    def settings_values(self) -> dict[str, Any]:
         return {
             "port": self.com_port.text().strip() or "COM3",
-            "slave_id": int(self.slave_id.text().strip() or 1),
-            "baudrate": int(self.baud_rate.text().strip() or 38400),
+            "slave_id": self.slave_id.text().strip() or "1",
+            "baudrate": self.baud_rate.text().strip() or "38400",
             "parity": (self.parity.text().strip() or "N").upper(),
-            "stopbits": int(self.stop_bits.text().strip() or 1),
+            "stopbits": self.stop_bits.text().strip() or "1",
+        }
+
+    def apply_settings(self, settings: dict[str, Any]) -> None:
+        self.com_port.setText(str(settings.get("port", "COM3")))
+        self.slave_id.setText(str(settings.get("slave_id", "1")))
+        self.baud_rate.setText(str(settings.get("baudrate", "38400")))
+        self.parity.setText(str(settings.get("parity", "N")).upper())
+        self.stop_bits.setText(str(settings.get("stopbits", "1")))
+
+    def comm_params(self) -> dict[str, Any]:
+        values = self.settings_values()
+        return {
+            "port": values["port"],
+            "slave_id": int(values["slave_id"]),
+            "baudrate": int(values["baudrate"]),
+            "parity": values["parity"],
+            "stopbits": int(values["stopbits"]),
         }
 
     def set_diagnostics(self, values: dict[str, Any]) -> None:

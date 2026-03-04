@@ -3,10 +3,12 @@ from __future__ import annotations
 from datetime import datetime
 
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QCloseEvent
 from PyQt6.QtWidgets import QHBoxLayout, QLabel, QMainWindow, QTabWidget, QVBoxLayout, QWidget
 
 from services.comm_service import CommService
 from services.data_model import DataModel
+from services.settings_store import SettingsStore
 from ui.aux_page import AuxPage
 from ui.graph_page import GraphPage
 from ui.log_setup_page import LogSetupPage
@@ -15,10 +17,17 @@ from ui.setup_page import SetupPage
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, model: DataModel, comm_service: CommService, parent: QWidget | None = None) -> None:
+    def __init__(
+        self,
+        model: DataModel,
+        comm_service: CommService,
+        settings_store: SettingsStore,
+        parent: QWidget | None = None,
+    ) -> None:
         super().__init__(parent)
         self.model = model
         self.comm_service = comm_service
+        self.settings_store = settings_store
 
         self.setWindowTitle("RCU OAS Control Panel")
         self.resize(1600, 980)
@@ -53,6 +62,8 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.setup_page, "Setup")
         layout.addWidget(self.tabs)
 
+        self._load_settings()
+
         self.setup_page.btn_connect.clicked.connect(self._connect_from_ui)
         self.setup_page.btn_disconnect.clicked.connect(self._disconnect)
 
@@ -66,8 +77,13 @@ class MainWindow(QMainWindow):
         self.comm_service.baudrate = params["baudrate"]
         self.comm_service.parity = params["parity"]
         self.comm_service.stopbits = params["stopbits"]
+        self._save_settings()
         ok = self.comm_service.connect()
         self.setup_page.append_log(f"[{datetime.now().strftime('%H:%M:%S')}] Connect -> {'OK' if ok else 'FAILED'}")
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        self._save_settings()
+        super().closeEvent(event)
 
     def _disconnect(self) -> None:
         self.comm_service.disconnect()
@@ -82,3 +98,11 @@ class MainWindow(QMainWindow):
         self.setup_page.set_diagnostics(data.diagnostics)
         if data.connected:
             self.version.setText(f"RCU OAS 2.1.4  |  {self.comm_service.port} slave {self.comm_service.slave_id}")
+
+    def _load_settings(self) -> None:
+        settings = self.settings_store.load()
+        if settings:
+            self.setup_page.apply_settings(settings)
+
+    def _save_settings(self) -> None:
+        self.settings_store.save(self.setup_page.settings_values())
